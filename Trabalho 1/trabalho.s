@@ -837,7 +837,7 @@ fim:
 reduz_lista:
 
 	cmpl	NULL, %edi
-	je	fimreduz
+	je	comeca_reducao_mais_menos
 	
 	cmpl	$10, (%edi)
 	je	se_numero
@@ -859,11 +859,11 @@ se_simbolo:
 	je faz_divisao
 
 faz_multiplicacao:
-	fmul %st(1), %st(0)
+	fmulp %st(1), %st(0)
 	jmp termina_multiplicacao_divisao
 
 faz_divisao:
-	fdivr %st(1), %st(0)
+	fdivrp %st(1), %st(0)
 
 termina_multiplicacao_divisao:
 	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
@@ -884,6 +884,60 @@ contreduz:
 
 	movl	16(%edi), %edi
 	jmp	reduz_lista	
+
+
+############## 	REDUÇÃO MAIS E MENOS
+
+comeca_reducao_mais_menos:
+
+movl listatoken, %edi
+
+reduz_lista_mais_menos:
+
+	cmpl	NULL, %edi
+	je	fimreduz
+	
+	cmpl	$10, (%edi)
+	je	se_numero_mais_menos
+
+se_simbolo_mais_menos:
+	movl 12(%edi), %eax # anterior
+	fldl 4(%eax)
+	movl 16(%edi), %ebx	# proximo
+	fldl 4(%ebx)
+
+	cmpl $2, (%edi)
+	je faz_subtracao
+
+faz_adicao:
+	faddp %st(1), %st(0)
+	jmp termina_mais_menos
+
+faz_subtracao:
+	fsubrp %st(1), %st(0)
+
+termina_mais_menos:
+	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
+	movl 16(%ebx), %esi   # Pega o proximo do proximo
+	cmpl NULL, %esi       
+	je continua_mais_menos
+	movl %eax, 12(%esi)  # coloca o anterior do proximo do proximo como o novo atual
+
+continua_mais_menos:
+	movl 16(%ebx), %edi	
+	movl %edi, 16(%eax)
+	movl $0, 16(%ebx)
+	movl %eax, %edi
+
+se_numero_mais_menos:
+
+contreduz_mais_menos:
+
+	movl	16(%edi), %edi
+	jmp	reduz_lista_mais_menos
+
+
+
 
 fimreduz:
 
