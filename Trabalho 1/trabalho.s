@@ -41,6 +41,7 @@ mostraS:	.asciz	"\nExpressao = %s\n"
 
 NULL:		.int	0
 
+//tpotencia	.asciz	"pot("
 tseno:		.asciz	"seno("
 tcoseno:	.asciz	"cosseno("
 ttangente:	.asciz	"tangente("
@@ -75,10 +76,66 @@ contaponto:	.int	0
 
 
 .section .text
-
 reduz:
+	finit
 
-# se tenho %edi como endereço inicial e faço +20 vou pro proximo campo, se faço -16 acesso o valor do campo anterior 
+	movl listatoken, %edi
+
+reduz_potencia:
+	cmpl NULL, %edi
+	je comeca_reducao_vezes_divisao
+
+	cmpl $10, (%edi)
+	je proximo_potencia
+
+	cmpl $1, (%edi)
+	je proximo_potencia
+
+	cmpl $2, (%edi)
+	je proximo_potencia
+
+	cmpl $3, (%edi)
+	je proximo_potencia
+
+	cmpl $4, (%edi)
+	je proximo_potencia
+
+se_potencia:
+	movl 12(%edi), %eax # anterior
+	movl 16(%edi), %ebx	# proximo
+	
+	fldl 4(%ebx)
+	fldl 4(%eax)
+	fyl2x
+	fstl %st(1)
+	frndint                  
+	fstl %st(2)
+	fsubp %st(1), %st               
+	f2xm1                  
+	fld1                  
+	faddp %st(1), %st                
+	fscale 
+
+termina_potencia:
+	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
+	movl 16(%ebx), %esi   # Pega o proximo do proximo
+	cmpl NULL, %esi       
+	je continua_potencia
+	movl %eax, 12(%esi)  # coloca o anterior do proximo do proximo como o novo atual
+
+continua_potencia:
+	movl 16(%ebx), %edi	
+	movl %edi, 16(%eax)
+	movl $0, 16(%ebx)
+	movl %eax, %edi
+
+proximo_potencia:
+	movl	16(%edi), %edi
+	jmp	reduz_potencia
+
+## Segunda passda pela lista reduzindo * e /
+
+comeca_reducao_vezes_divisao:
 	movl listatoken, %edi
 
 reduz_lista:
@@ -130,7 +187,7 @@ se_numero:
 contreduz:
 
 	movl	16(%edi), %edi
-	jmp	reduz_lista	
+	jmp	reduz_lista		
 
 
 ############## 	REDUÇÃO MAIS E MENOS
@@ -204,7 +261,7 @@ main:
 	call	le_expressao
 	call	cria_lista
 	call	checa_lista
-	#call	mostra_lista
+	call	mostra_lista
 	call	reduz	
 	jmp	fim
 
@@ -261,6 +318,9 @@ pegaprox:
 	cmpb	$47, %al
 	je	tratadivisao		# tipo 4
 
+	cmpb	$94, %al
+	je	tratapotencia		# tipo 11
+
 	cmpb	$40, %al
 	je	trataabreparentese	# tipo 5
 
@@ -283,6 +343,12 @@ pegaprox:
 	jmp	trataerro
 
 	ret
+
+
+
+
+
+
 
 tratafimstring:
 
@@ -414,6 +480,8 @@ tratafechaparentese:
 erropar:
 	movl	$msgerro3, %ebx
 	jmp	trataerro
+
+
 
 trataseno:
 	pusha
@@ -740,6 +808,28 @@ trataerro:
 	call	printf
 	addl	$8, %esp		#antes nada	
 	jmp	fim
+
+
+
+
+tratapotencia:
+	movl	$11, tipotoken
+	movl	$0, %ebx
+	movb	%al, %bl
+
+	pusha
+	pushl	%ebx
+	pushl	$mostraC
+	call	printf
+	addl	$8, %esp
+	popa
+
+	call	inserelista
+	incl	poscar
+	incl	%edi
+	jmp	pegaprox
+
+	
 
 extraitokenN:
 
