@@ -842,6 +842,11 @@ reduz_lista:
 	cmpl	$10, (%edi)
 	je	se_numero
 
+	cmpl $1, (%edi)
+	je contreduz
+
+	cmpl $2, (%edi)
+	je contreduz
 
 
 se_simbolo:
