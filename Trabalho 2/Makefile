@@ -1,7 +1,7 @@
 all:
 	@clear
-	@gcc -c -m32 trabalho.s -o trabalho.o
-	@gcc -m32 trabalho.o -o trabalho -lm
+	@gcc -c -m32 calcexpress.s -o calcexpress.o
+	@gcc -m32 principal.c calcexpress.o -o principal -lm
 	@rm *.o
 	@clear
-	@./trabalho
+	@./principal
