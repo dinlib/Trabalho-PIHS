@@ -4,7 +4,7 @@ telaabertura:	.asciz	"Programa que interpreta e calcula expressoes matematicas\n
 
 mostraResultado: .asciz "\nResultado da expressão: %.2f\n"
 
-exemplo: .asciz "\nOperadores disponíveis: +,-,*,/ \nExemplos funções: seno(10), cosseno(10), tangente(10) \nNão suporta parenteses no momento"
+exemplo: .asciz "\nOperadores disponíveis: +,-,*,/ \nExemplos funções: seno(x), cosseno(x), tangente(x), raiz(x) \nNão suporta parenteses no momento"
 
 pedeexpressao:	.asciz	"\n\nEntre com a expressao matematica => ";
 
@@ -25,6 +25,7 @@ tseno:		.asciz	"seno("
 tcoseno:	.asciz	"cosseno("
 ttangente:	.asciz	"tangente("
 potencia:	.asciz	"potencia("
+traiz:		.asciz	"raiz("
 
 valorD:		.int	0
 valorF:		.double	0.0
@@ -349,6 +350,9 @@ cria_lista:
 	cmpb	$115, %al
 	je	trataseno		# tipo 10
 
+	cmpb	$114, %al
+	je	trataraiz		# tipo 10
+
 	cmpb	$99, %al
 	je	tratacosseno		# tipo 10
 
@@ -379,6 +383,77 @@ cria_lista:
 	
 
 	trataespaco:
+	incl	poscar
+	incl	%edi
+	jmp	pegaprox
+
+	trataraiz:
+
+	pusha
+
+	movl	$10, tipotoken
+	pushl	$5		
+	pushl	%edi
+	pushl	$token
+	call	memcpy
+	addl	$4, %esp
+	popl	%edi
+	addl	$4, %esp		
+
+	movl 	$token, %esi
+	movb	$0, 5(%esi)		
+   
+	pushl	%edi
+	pushl	$token
+	pushl	$mostraToken
+	call	printf
+	addl	$8, %esp
+	popl	%edi
+
+	pushl	$token
+	pushl	$traiz		
+	call	strcmp
+	addl	$8, %esp		
+	cmpl	$0, %eax
+	jne	erro4
+
+	popa				
+
+	addl	$5, poscar 		
+	addl	$5, %edi
+	
+	movb	(%edi), %al
+	cmpb	$48, %al
+	jl	erro4
+	
+	cmpb	$57, %al
+	jg	erro4
+
+	call	extraitokenN
+
+	pushl	%edi
+	pushl	$token
+	pushl	$mostraToken
+	call	printf
+	addl	$8, %esp
+	popl	%edi
+	
+	movb	(%edi), %al
+	cmpb	$41, %al
+	jne	erro4
+
+	finit
+	
+	pushl	$token
+	call	atof
+	subl	$8, %esp
+	fstl	(%esp)
+	call	sqrt	
+	addl	$12, %esp
+
+	movl	$10, tipotoken
+	call	inserelista
+	
 	incl	poscar
 	incl	%edi
 	jmp	pegaprox
@@ -822,7 +897,10 @@ cria_lista:
 	addl	$8, %esp		#antes nada	
 	jmp	fim
 
+	erro4:
 
+	movl	$msgerro4, %ebx
+	jmp	trataerro
 
 
 	tratapotencia:
