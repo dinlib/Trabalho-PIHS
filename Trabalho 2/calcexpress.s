@@ -1,12 +1,6 @@
 .section .data
 
-telaabertura:	.asciz	"Programa que interpreta e calcula expressoes matematicas\n"
-
 mostraResultado: .asciz "\nResultado da expressão: %.2f\n"
-
-exemplo: .asciz "\nOperadores disponíveis: +,-,*,/ \nExemplos funções: seno(10), cosseno(10), tangente(10) \nNão suporta parenteses no momento"
-
-pedeexpressao:	.asciz	"\n\nEntre com a expressao matematica => ";
 
 trataerrolista:	.asciz	"\nErro na ordem da lista de tokkens.\n"
 
@@ -47,6 +41,9 @@ poscar:		.int	0	# anotar a posicao do caracter
 
 contaponto:	.int	0
 
+endereco: .int 0
+endereco_retorno: .int 0
+
 .section .bss
 
 .lcomm express, 200	# para armazenar expressoes ate 200 caracteres
@@ -55,14 +52,30 @@ contaponto:	.int	0
 
 
 .section .text
-# Função de redução das listas, primeiro resolve as potencias, em seguida * e /, por fim + e -
 
+.global reduz 
+.global mostra_lista
+.global cria_lista
+.global checa_lista
+.global calcexpress
+
+calcexpress:
+	movl 4(%esp), %edi
+	movl %edi, endereco
+	movl 8(%esp), %edi
+	movl %edi, endereco_retorno
+	call cria_lista
+	call checa_lista
+	call reduz
+
+
+# Função de redução das listas, primeiro resolve as potencias, em seguida * e /, por fim + e -
 reduz:
 	finit
 
 	movl listatoken, %edi
 
-reduz_potencia:
+	reduz_potencia:
 	cmpl NULL, %edi
 	je comeca_reducao_vezes_divisao
 
@@ -81,7 +94,7 @@ reduz_potencia:
 	cmpl $4, (%edi)
 	je proximo_potencia
 
-se_potencia:
+	se_potencia:
 	movl 12(%edi), %eax # anterior
 	movl 16(%edi), %ebx	# proximo
 	
@@ -97,29 +110,29 @@ se_potencia:
 	faddp %st(1), %st                
 	fscale 
 
-termina_potencia:
+	termina_potencia:
 	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
 	movl 16(%ebx), %esi   # Pega o proximo do proximo
 	cmpl NULL, %esi       
 	je continua_potencia
 	movl %eax, 12(%esi)  # coloca o anterior do proximo do proximo como o novo atual
 
-continua_potencia:
+	continua_potencia:
 	movl 16(%ebx), %edi	
 	movl %edi, 16(%eax)
 	movl $0, 16(%ebx)
 	movl %eax, %edi
 
-proximo_potencia:
+	proximo_potencia:
 	movl	16(%edi), %edi
 	jmp	reduz_potencia
 
-## Segunda passda pela lista reduzindo * e /
+	## Segunda passda pela lista reduzindo * e /
 
-comeca_reducao_vezes_divisao:
+	comeca_reducao_vezes_divisao:
 	movl listatoken, %edi
 
-reduz_lista:
+	reduz_lista:
 
 	cmpl	NULL, %edi
 	je	comeca_reducao_mais_menos
@@ -134,7 +147,7 @@ reduz_lista:
 	je contreduz
 
 
-se_simbolo:
+	se_simbolo:
 	movl 12(%edi), %eax # anterior
 	fldl 4(%eax)
 	movl 16(%edi), %ebx	# proximo
@@ -143,41 +156,41 @@ se_simbolo:
 	cmpl $4, (%edi)
 	je faz_divisao
 
-faz_multiplicacao:
+	faz_multiplicacao:
 	fmulp %st(1), %st(0)
 	jmp termina_multiplicacao_divisao
 
-faz_divisao:
+	faz_divisao:
 	fdivrp %st(1), %st(0)
 
-termina_multiplicacao_divisao:
+	termina_multiplicacao_divisao:
 	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
 	movl 16(%ebx), %esi   # Pega o proximo do proximo
 	cmpl NULL, %esi       
 	je continua
 	movl %eax, 12(%esi)  # coloca o anterior do proximo do proximo como o novo atual
 
-continua:
+	continua:
 	movl 16(%ebx), %edi	
 	movl %edi, 16(%eax)
 	movl $0, 16(%ebx)
 	movl %eax, %edi
 
-se_numero:
+	se_numero:
 
-contreduz:
+	contreduz:
 
 	movl	16(%edi), %edi
 	jmp	reduz_lista		
 
 
-############## 	REDUÇÃO MAIS E MENOS
+	############## 	REDUÇÃO MAIS E MENOS
 
-comeca_reducao_mais_menos:
+	comeca_reducao_mais_menos:
 
-movl listatoken, %edi
+	movl listatoken, %edi
 
-reduz_lista_mais_menos:
+	reduz_lista_mais_menos:
 
 	cmpl	NULL, %edi
 	je	fimreduz
@@ -185,7 +198,7 @@ reduz_lista_mais_menos:
 	cmpl	$10, (%edi)
 	je	se_numero_mais_menos
 
-se_simbolo_mais_menos:
+	se_simbolo_mais_menos:
 	movl 12(%edi), %eax # anterior
 	fldl 4(%eax)
 	movl 16(%edi), %ebx	# proximo
@@ -194,70 +207,40 @@ se_simbolo_mais_menos:
 	cmpl $2, (%edi)
 	je faz_subtracao
 
-faz_adicao:
+	faz_adicao:
 	faddp %st(1), %st(0)
 	jmp termina_mais_menos
 
-faz_subtracao:
+	faz_subtracao:
 	fsubrp %st(1), %st(0)
 
-termina_mais_menos:
+	termina_mais_menos:
 	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
 	movl 16(%ebx), %esi   # Pega o proximo do proximo
 	cmpl NULL, %esi       
 	je continua_mais_menos
 	movl %eax, 12(%esi)  # coloca o anterior do proximo do proximo como o novo atual
 
-continua_mais_menos:
+	continua_mais_menos:
 	movl 16(%ebx), %edi	
 	movl %edi, 16(%eax)
 	movl $0, 16(%ebx)
 	movl %eax, %edi
 
-se_numero_mais_menos:
+	se_numero_mais_menos:
 
-contreduz_mais_menos:
+	contreduz_mais_menos:
 
 	movl	16(%edi), %edi
 	jmp	reduz_lista_mais_menos
 
 
-fimreduz:
+	fimreduz:
 
 	movl listatoken, %eax
 	fldl 4(%eax)
-	subl $8, %esp
-	fstpl (%esp)
-	pushl $mostraResultado
-	call printf
-	addl $12, %esp
-
-ret
-
-# Função pra mostrar a tela de abertura e o exemplo de funções
-abertura:
-
-	pushl	$telaabertura
-	call	printf
-	pushl $exemplo
-	call printf
-	addl	$8, %esp
-
-	ret
-
-# Função para ler a expressao digitada pelo usuario a ser resolvida
-le_expressao:
-
-	pushl	$pedeexpressao
-	call	printf
-	pushl	$express
-	call	gets
-	addl	$8, %esp
-	
-	pushl	$express
-	pushl	$mostraS
-	call	printf
-	addl	$8, %esp
+	movl endereco_retorno, %edi
+	fstpl (%edi)
 
 	ret
 
@@ -311,7 +294,7 @@ mostra_lista:
 # Função para criar a lista duplamente encadeada
 cria_lista:
 
-	movl	$express, %edi
+	movl	endereco, %edi
 	movl	$1, poscar
 
 	pegaprox:
@@ -820,7 +803,7 @@ cria_lista:
 	pushl	%ebx
 	call	printf
 	addl	$8, %esp		#antes nada	
-	jmp	fim
+	#jmp	fim
 
 
 
@@ -993,24 +976,8 @@ checa_lista:
 	pushl	$trataerrolista
 	call	printf
 	addl	$4, %esp
-	jmp fim
+	#jmp fim
 
 	fimcheca:	
 	popl	%edi
 	ret
-
-.global main
-
-main:
-
-	call	abertura
-	call	le_expressao
-	call	cria_lista
-	call	checa_lista
-	call	mostra_lista
-	call	reduz	
-
-fim:
-
-	pushl $0
-    call exit
