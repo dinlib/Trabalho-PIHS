@@ -26,6 +26,7 @@ tcoseno:	.asciz	"cosseno("
 ttangente:	.asciz	"tangente("
 potencia:	.asciz	"potencia("
 traiz:		.asciz	"raiz("
+tlog:		.asciz  "log("
 
 valorD:		.int	0
 valorF:		.double	0.0
@@ -353,6 +354,9 @@ cria_lista:
 	cmpb	$114, %al
 	je	trataraiz		# tipo 10
 
+	cmpb	$108, %al
+	je	tratalog		# tipo 10
+
 	cmpb	$99, %al
 	je	tratacosseno		# tipo 10
 
@@ -435,6 +439,63 @@ cria_lista:
 	subl	$8, %esp
 	fstl	(%esp)
 	call	sqrt	
+	addl	$12, %esp
+
+	movl	$10, tipotoken
+	call	inserelista
+	
+	incl	poscar
+	incl	%edi
+	jmp	pegaprox
+
+	tratalog:
+
+	pusha
+
+	movl	$10, tipotoken
+	pushl	$5		
+	pushl	%edi
+	pushl	$token
+	call	memcpy
+	addl	$4, %esp
+	popl	%edi
+	addl	$4, %esp		
+
+	movl 	$token, %esi
+	movb	$0, 4(%esi)		
+
+	pushl	$token
+	pushl	$tlog		
+	call	strcmp
+	addl	$8, %esp		
+	cmpl	$0, %eax
+	jne	erro4
+
+	popa				
+
+	addl	$4, poscar 		
+	addl	$4, %edi
+	
+	movb	(%edi), %al
+	cmpb	$48, %al
+	jl	erro4
+	
+	cmpb	$57, %al
+	jg	erro4
+
+	call	extraitokenN
+	
+	movb	(%edi), %al
+	cmpb	$41, %al
+	jne	erro4
+
+	finit
+	
+	pushl	$token
+	call	atof
+	subl	$8, %esp
+	fstl	(%esp)
+	call	log10	
 	addl	$12, %esp
 
 	movl	$10, tipotoken
