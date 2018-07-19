@@ -14,11 +14,12 @@ mostraS:	.asciz	"\nExpressao = %s\n"
 
 NULL:		.int	0
 
-//tpotencia	.asciz	"pot("
+tpow:		.asciz	"pow("
 tseno:		.asciz	"seno("
 tcoseno:	.asciz	"cosseno("
 ttangente:	.asciz	"tangente("
-potencia:	.asciz	"potencia("
+traiz:		.asciz	"raiz("
+tlog:		.asciz  "log("
 
 valorD:		.int	0
 valorF:		.double	0.0
@@ -320,8 +321,14 @@ cria_lista:
 	cmpb	$47, %al
 	je	tratadivisao		# tipo 4
 
-	cmpb	$94, %al
-	je	tratapotencia		# tipo 11
+	cmpb 	$112, %al
+	je tratapotencia
+
+	cmpb	$114, %al
+	je	trataraiz		# tipo 10
+
+	cmpb	$108, %al
+	je	tratalog		# tipo 10
 
 	cmpb	$40, %al
 	je	trataabreparentese	# tipo 5
@@ -371,12 +378,6 @@ cria_lista:
 	movl	$0, %ebx
 	movb	%al, %bl
 
-	pusha
-	pushl	%ebx
-	pushl	$mostraC
-	call	printf
-	addl	$8, %esp
-	popa
 
 	call	inserelista
 	incl	poscar
@@ -388,12 +389,6 @@ cria_lista:
 	movl	$0, %ebx
 	movb	%al, %bl
 
-	pusha
-	pushl	%ebx
-	pushl	$mostraC
-	call	printf
-	addl	$8, %esp
-	popa
 
 	call	inserelista
 	incl	poscar
@@ -405,12 +400,6 @@ cria_lista:
 	movl	$0, %ebx
 	movb	%al, %bl
 
-	pusha
-	pushl	%ebx
-	pushl	$mostraC
-	call	printf
-	addl	$8, %esp
-	popa
 
 	call	inserelista
 	incl	poscar
@@ -422,13 +411,6 @@ cria_lista:
 	movl	$0, %ebx
 	movb	%al, %bl
 
-	pusha
-	pushl	%ebx
-	pushl	$mostraC
-	call	printf
-	addl	$8, %esp
-	popa
-
 	call	inserelista
 	incl	poscar
 	incl	%edi
@@ -439,12 +421,6 @@ cria_lista:
 	movl	$0, %ebx
 	movb	%al, %bl
 
-	pusha
-	pushl	%ebx
-	pushl	$mostraC
-	call	printf
-	addl	$8, %esp
-	popa
 
 	call	inserelista
 	incl	contapar
@@ -457,12 +433,6 @@ cria_lista:
 	movl	$0, %ebx
 	movb	%al, %bl
 
-	pusha
-	pushl	%ebx
-	pushl	$mostraC
-	call	printf
-	addl	$8, %esp
-	popa
 
 	call	inserelista
 	decl	contapar
@@ -477,6 +447,120 @@ cria_lista:
 	movl	$msgerro3, %ebx
 	jmp	trataerro
 
+
+	trataraiz:
+
+	pusha
+
+	movl	$10, tipotoken
+	pushl	$5		
+	pushl	%edi
+	pushl	$token
+	call	memcpy
+	addl	$4, %esp
+	popl	%edi
+	addl	$4, %esp		
+
+	movl 	$token, %esi
+	movb	$0, 5(%esi)		
+
+	pushl	$token
+	pushl	$traiz		
+	call	strcmp
+	addl	$8, %esp		
+	cmpl	$0, %eax
+	jne	erro4
+
+	popa				
+
+	addl	$5, poscar 		
+	addl	$5, %edi
+	
+	movb	(%edi), %al
+	cmpb	$48, %al
+	jl	erro4
+	
+	cmpb	$57, %al
+	jg	erro4
+
+	call	extraitokenN
+	
+	movb	(%edi), %al
+	cmpb	$41, %al
+	jne	erro4
+
+	finit
+	
+	pushl	$token
+	call	atof
+	subl	$8, %esp
+	fstl	(%esp)
+	call	sqrt	
+	addl	$12, %esp
+
+	movl	$10, tipotoken
+	call	inserelista
+	
+	incl	poscar
+	incl	%edi
+	jmp	pegaprox
+
+	tratalog:
+
+	pusha
+
+	movl	$10, tipotoken
+	pushl	$4		
+	pushl	%edi
+	pushl	$token
+	call	memcpy
+	addl	$4, %esp
+	popl	%edi
+	addl	$4, %esp		
+
+	movl 	$token, %esi
+	movb	$0, 4(%esi)		
+
+	pushl	$token
+	pushl	$tlog		
+	call	strcmp
+	addl	$8, %esp		
+	cmpl	$0, %eax
+	jne	erro4
+
+	popa				
+
+	addl	$4, poscar 		
+	addl	$4, %edi
+	
+	movb	(%edi), %al
+	cmpb	$48, %al
+	jl	erro4
+	
+	cmpb	$57, %al
+	jg	erro4
+
+	call	extraitokenN
+	
+	movb	(%edi), %al
+	cmpb	$41, %al
+	jne	erro4
+
+	finit
+	
+	pushl	$token
+	call	atof
+	subl	$8, %esp
+	fstl	(%esp)
+	call	log10	
+	addl	$12, %esp
+
+	movl	$10, tipotoken
+	call	inserelista
+	
+	incl	poscar
+	incl	%edi
+	jmp	pegaprox
 
 
 	trataseno:
@@ -493,12 +577,6 @@ cria_lista:
 	movl 	$token, %esi
 	movb	$0, 5(%esi)		
    
-	pushl	%edi
-	pushl	$token
-	pushl	$mostraToken
-	call	printf
-	addl	$8, %esp
-	popl	%edi
 
 	pushl	$token
 	pushl	$tseno		
@@ -539,13 +617,6 @@ cria_lista:
 	contseno3:
 
 	call	extraitokenN
-
-	pushl	%edi
-	pushl	$token
-	pushl	$mostraToken
-	call	printf
-	addl	$8, %esp
-	popl	%edi
 	
 	movb	(%edi), %al
 	cmpb	$41, %al
@@ -587,13 +658,6 @@ cria_lista:
 
 	movl 	$token, %esi
 	movb	$0, 8(%esi)		
-   
-	pushl	%edi
-	pushl	$token
-	pushl	$mostraToken
-	call	printf
-	addl	$8, %esp
-	popl	%edi
 
 	pushl	$token
 	pushl	$tcoseno		
@@ -635,13 +699,6 @@ cria_lista:
 	contcoseno3:
 
 	call	extraitokenN
-
-	pushl	%edi
-	pushl	$token
-	pushl	$mostraToken
-	call	printf
-	addl	$8, %esp
-	popl	%edi
 	
 	movb	(%edi), %al
 	cmpb	$41, %al
@@ -685,12 +742,6 @@ cria_lista:
 	movl 	$token, %esi
 	movb	$0, 9(%esi)		
    
-	pushl	%edi
-	pushl	$token
-	pushl	$mostraToken
-	call	printf
-	addl	$8, %esp
-	popl	%edi
 
 	pushl	$token
 	pushl	$ttangente		
@@ -731,13 +782,6 @@ cria_lista:
 	conttangente3:
 
 	call	extraitokenN
-
-	pushl	%edi
-	pushl	$token
-	pushl	$mostraToken
-	call	printf
-	addl	$8, %esp
-	popl	%edi
 	
 	movb	(%edi), %al
 	cmpb	$41, %al
@@ -778,12 +822,6 @@ cria_lista:
 
 	call	extraitokenN
 	
-	pushl	%edi
-	pushl	$token
-	pushl	$mostraToken
-	call	printf
-	addl	$8, %esp
-	popl	%edi
 
 	finit
 	
@@ -803,24 +841,91 @@ cria_lista:
 	pushl	%ebx
 	call	printf
 	addl	$8, %esp		#antes nada	
-	#jmp	fim
-
-
-
+	pushl $1
+	call exit
 
 	tratapotencia:
-	movl	$11, tipotoken
-	movl	$0, %ebx
-	movb	%al, %bl
-
 	pusha
-	pushl	%ebx
-	pushl	$mostraC
-	call	printf
-	addl	$8, %esp
+
+	movl	$10, tipotoken
+	pushl	$4		
+	pushl	%edi
+	pushl	$token
+	call	memcpy
+	addl	$4, %esp
+	popl	%edi
+	addl	$4, %esp		
+
+	movl 	$token, %esi
+	movb	$0, 4(%esi)		
+
+	pushl	$token
+	pushl	$tpow		
+	call	strcmp
+	addl	$8, %esp		
+	cmpl	$0, %eax
+	jne	erro4
+
 	popa
 
+	addl $4, poscar
+	addl $4, %edi
+
+	movb (%edi), %al
+	cmpb $48, %al
+	jl erro4
+
+	cmpb $57, %al
+	jg erro4
+
+	call extraitokenN
+
+	pusha
+
+	pushl $token
+	call atof
+	addl $4, %esp
+
+	popa
+
+	movb (%edi), %al
+	cmpb $44, %al
+	jne erro4
+
+	addl $1, %edi
+	addl $1, poscar
+
+	movb (%edi), %al
+	cmpb $48, %al
+	jl erro4
+
+	cmpb $57, %al
+	jg erro4
+
+	call extraitokenN
+
+	pusha
+
+	pushl $token
+	call atof
+	addl $4, %esp
+
+	popa
+
+	movb (%edi), %al
+	cmpb $41, %al
+	jne erro4
+
+	subl $8, %esp
+	fstpl (%esp)
+	subl $8, %esp
+	fstpl (%esp)
+	call pow
+
+	addl 	$16, %esp
+	movl	$10, tipotoken
 	call	inserelista
+	
 	incl	poscar
 	incl	%edi
 	jmp	pegaprox
@@ -872,6 +977,10 @@ cria_lista:
 	
 	movl	$msgerro6, %ebx
 	jmp	trataerro
+
+	erro4:
+	movl $msgerro4, %ebx
+	jmp trataerro
 	
 
 	inserelista:
@@ -976,7 +1085,8 @@ checa_lista:
 	pushl	$trataerrolista
 	call	printf
 	addl	$4, %esp
-	#jmp fim
+	pushl $1
+	call exit
 
 	fimcheca:	
 	popl	%edi
