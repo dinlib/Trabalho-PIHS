@@ -42,6 +42,9 @@ poscar:		.int	0	# anotar a posicao do caracter
 
 contaponto:	.int	0
 
+ponteiro: .int 0
+aux: 	.int 0
+
 endereco: .int 0
 endereco_retorno: .int 0
 
@@ -59,6 +62,7 @@ endereco_retorno: .int 0
 .global cria_lista
 .global checa_lista
 .global calcexpress
+.global resolve_parenteses
 
 calcexpress:
 	movl 4(%esp), %edi
@@ -66,72 +70,86 @@ calcexpress:
 	movl 8(%esp), %edi
 	movl %edi, endereco_retorno
 	call cria_lista
-	call checa_lista
+	#call checa_lista
+	movl listatoken, %edi
+	call resolve_parenteses
+	ret
+
+resolve_parenteses:
+	cmpl NULL, %edi
+	je termina_resolve_parenteses
+
+	cmpl $5, (%edi)
+	je achou_abre_parenteses
+
+	cmpl $6, (%edi)
+	je achou_fecha_parenteses
+
+	jmp continua_procura_parenteses
+
+achou_abre_parenteses:
+	movl %edi, ponteiro
+	jmp continua_procura_parenteses
+
+achou_fecha_parenteses:
+	movl 16(%edi), %eax
+	movl %eax, aux
+
+	movl 12(%edi), %edi
+	movl $0, 16(%edi)
+	movl ponteiro, %edi
+	movl 16(%edi), %edi
+	movl %edi, ponteiro
 	call reduz
+	
+	movl ponteiro, %ebx		# endereço do resultado, anterior dele é o abre parenteses
+
+	movl aux, %eax  # endereço do proximo do )
+	cmpl NULL, %eax
+	je retira_abre_parenteses
+
+	movl %eax, 16(%ebx)
+	movl %ebx, 12(%eax)
+
+retira_abre_parenteses:
+
+	movl 12(%ebx), %eax
+	cmpl NULL, %eax
+	je continua_procura_parenteses
+	movl 12(%eax), %eax
+	movl %ebx, 16(%eax)
+	movl %eax, 12(%ebx)
+
+	movl listatoken, %edi
+	cmpl $5, (%edi)
+	je retira_elemento
+	jmp resolve_parenteses
+
+retira_elemento:
+	movl 16(%edi), %edi
+	movl %edi, listatoken
+	jmp resolve_parenteses
+
+continua_procura_parenteses:
+	movl 16(%edi), %edi
+	jmp resolve_parenteses
+
+
+termina_resolve_parenteses:
+	movl listatoken, %edi
+	movl %edi, ponteiro
+	call reduz
+	ret
 
 
 # Função de redução das listas, primeiro resolve as potencias, em seguida * e /, por fim + e -
 reduz:
 	finit
 
-	movl listatoken, %edi
-
-	reduz_potencia:
-	cmpl NULL, %edi
-	je comeca_reducao_vezes_divisao
-
-	cmpl $10, (%edi)
-	je proximo_potencia
-
-	cmpl $1, (%edi)
-	je proximo_potencia
-
-	cmpl $2, (%edi)
-	je proximo_potencia
-
-	cmpl $3, (%edi)
-	je proximo_potencia
-
-	cmpl $4, (%edi)
-	je proximo_potencia
-
-	se_potencia:
-	movl 12(%edi), %eax # anterior
-	movl 16(%edi), %ebx	# proximo
-	
-	fldl 4(%ebx)
-	fldl 4(%eax)
-	fyl2x
-	fstl %st(1)
-	frndint                  
-	fstl %st(2)
-	fsubp %st(1), %st               
-	f2xm1                  
-	fld1                  
-	faddp %st(1), %st                
-	fscale 
-
-	termina_potencia:
-	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
-	movl 16(%ebx), %esi   # Pega o proximo do proximo
-	cmpl NULL, %esi       
-	je continua_potencia
-	movl %eax, 12(%esi)  # coloca o anterior do proximo do proximo como o novo atual
-
-	continua_potencia:
-	movl 16(%ebx), %edi	
-	movl %edi, 16(%eax)
-	movl $0, 16(%ebx)
-	movl %eax, %edi
-
-	proximo_potencia:
-	movl	16(%edi), %edi
-	jmp	reduz_potencia
-
-	## Segunda passda pela lista reduzindo * e /
+	## Começa passando pela lista reduzindo * e /
 
 	comeca_reducao_vezes_divisao:
-	movl listatoken, %edi
+	movl ponteiro, %edi
 
 	reduz_lista:
 
@@ -189,7 +207,7 @@ reduz:
 
 	comeca_reducao_mais_menos:
 
-	movl listatoken, %edi
+	movl ponteiro, %edi
 
 	reduz_lista_mais_menos:
 
@@ -238,7 +256,7 @@ reduz:
 
 	fimreduz:
 
-	movl listatoken, %eax
+	movl ponteiro, %eax
 	fldl 4(%eax)
 	movl endereco_retorno, %edi
 	fstpl (%edi)
