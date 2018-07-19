@@ -20,11 +20,10 @@ mostraS:	.asciz	"\nExpressao = %s\n"
 
 NULL:		.int	0
 
-//tpotencia	.asciz	"pot("
+tpow:		.asciz	"pow("
 tseno:		.asciz	"seno("
 tcoseno:	.asciz	"cosseno("
 ttangente:	.asciz	"tangente("
-potencia:	.asciz	"potencia("
 traiz:		.asciz	"raiz("
 tlog:		.asciz  "log("
 
@@ -64,62 +63,7 @@ reduz:
 
 	movl listatoken, %edi
 
-reduz_potencia:
-	cmpl NULL, %edi
-	je comeca_reducao_vezes_divisao
-
-	cmpl $10, (%edi)
-	je proximo_potencia
-
-	cmpl $1, (%edi)
-	je proximo_potencia
-
-	cmpl $2, (%edi)
-	je proximo_potencia
-
-	cmpl $3, (%edi)
-	je proximo_potencia
-
-	cmpl $4, (%edi)
-	je proximo_potencia
-
-se_potencia:
-	movl 12(%edi), %eax # anterior
-	movl 16(%edi), %ebx	# proximo
-	
-	fldl 4(%ebx)
-	fldl 4(%eax)
-	fyl2x
-	fstl %st(1)
-	frndint                  
-	fstl %st(2)
-	fsubp %st(1), %st               
-	f2xm1                  
-	fld1                  
-	faddp %st(1), %st                
-	fscale 
-
-termina_potencia:
-	fstpl 4(%eax)			# Guarda o resultado no anterior: exemplo: 3*5 o resultado será guardado no lugar do 3
-	movl 16(%ebx), %esi   # Pega o proximo do proximo
-	cmpl NULL, %esi       
-	je continua_potencia
-	movl %eax, 12(%esi)  # coloca o anterior do proximo do proximo como o novo atual
-
-continua_potencia:
-	movl 16(%ebx), %edi	
-	movl %edi, 16(%eax)
-	movl $0, 16(%ebx)
-	movl %eax, %edi
-
-proximo_potencia:
-	movl	16(%edi), %edi
-	jmp	reduz_potencia
-
-## Segunda passda pela lista reduzindo * e /
-
-comeca_reducao_vezes_divisao:
-	movl listatoken, %edi
+	# Começa reduzindo * e /
 
 reduz_lista:
 
@@ -357,6 +301,9 @@ cria_lista:
 	cmpb	$108, %al
 	je	tratalog		# tipo 10
 
+	cmpb 	$112, %al
+	je tratapotencia
+
 	cmpb	$99, %al
 	je	tratacosseno		# tipo 10
 
@@ -390,6 +337,93 @@ cria_lista:
 	incl	poscar
 	incl	%edi
 	jmp	pegaprox
+
+	tratapotencia:
+	pusha
+
+	movl	$10, tipotoken
+	pushl	$4		
+	pushl	%edi
+	pushl	$token
+	call	memcpy
+	addl	$4, %esp
+	popl	%edi
+	addl	$4, %esp		
+
+	movl 	$token, %esi
+	movb	$0, 4(%esi)		
+
+	pushl	$token
+	pushl	$tpow		
+	call	strcmp
+	addl	$8, %esp		
+	cmpl	$0, %eax
+	jne	erro4
+
+	popa
+
+	addl $4, poscar
+	addl $4, %edi
+
+	movb (%edi), %al
+	cmpb $48, %al
+	jl erro4
+
+	cmpb $57, %al
+	jg erro4
+
+	call extraitokenN
+
+	pusha
+
+	pushl $token
+	call atof
+	addl $4, %esp
+
+	popa
+
+	movb (%edi), %al
+	cmpb $44, %al
+	jne erro4
+
+	addl $1, %edi
+	addl $1, poscar
+
+	movb (%edi), %al
+	cmpb $48, %al
+	jl erro4
+
+	cmpb $57, %al
+	jg erro4
+
+	call extraitokenN
+
+	pusha
+
+	pushl $token
+	call atof
+	addl $4, %esp
+
+	popa
+
+	movb (%edi), %al
+	cmpb $41, %al
+	jne erro4
+
+	subl $8, %esp
+	fstpl (%esp)
+	subl $8, %esp
+	fstpl (%esp)
+	call pow
+
+	addl 	$16, %esp
+	movl	$10, tipotoken
+	call	inserelista
+	
+	incl	poscar
+	incl	%edi
+	jmp	pegaprox
+
 
 	trataraiz:
 
@@ -453,7 +487,7 @@ cria_lista:
 	pusha
 
 	movl	$10, tipotoken
-	pushl	$5		
+	pushl	$4		
 	pushl	%edi
 	pushl	$token
 	call	memcpy
@@ -854,16 +888,6 @@ cria_lista:
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-
-	tratapotencia:
-	movl	$11, tipotoken
-	movl	$0, %ebx
-	movb	%al, %bl
-
-	call	inserelista
-	incl	poscar
-	incl	%edi
-	jmp	pegaprox
 
 	extraitokenN:
 
