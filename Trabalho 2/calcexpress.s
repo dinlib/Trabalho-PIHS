@@ -77,57 +77,60 @@ calcexpress:
 
 resolve_parenteses:
 	cmpl NULL, %edi
-	je termina_resolve_parenteses
+	je termina_resolve_parenteses		# se chegou ao final termina de procurar parenteses
 
 	cmpl $5, (%edi)
-	je achou_abre_parenteses
+	je achou_abre_parenteses			# achou um abre parenteses, tem que atualizar o endereço do ultimo abre parenteses pra ele
 
 	cmpl $6, (%edi)
-	je achou_fecha_parenteses
+	je achou_fecha_parenteses			# achou um fecha parenteses, precisa resolver a sub-expressao
 
-	jmp continua_procura_parenteses
+	jmp continua_procura_parenteses		# não é nem abre nem fecha parenteses, vai pro proximo
 
 achou_abre_parenteses:
-	movl %edi, ponteiro
-	jmp continua_procura_parenteses
+	movl %edi, ponteiro					 # move o endereço do abre parenteses pro ponteiro
+	jmp continua_procura_parenteses			# continua a procura
 
-achou_fecha_parenteses:
-	movl 16(%edi), %eax
-	movl %eax, aux
+achou_fecha_parenteses:	
+	movl 16(%edi), %eax 				# move o proximo do fecha parenteses pro %eax
+	movl %eax, aux						# move o proximo do fecha parenteses para uma variavel auxiliar para guardar o valor
 
-	movl 12(%edi), %edi
-	movl $0, 16(%edi)
-	movl ponteiro, %edi
-	movl 16(%edi), %edi
-	movl %edi, ponteiro
-	call reduz
+	movl 12(%edi), %edi 				# volta para o elemento anterior do fecha parenteses
+	movl $0, 16(%edi) 					# coloca o proximo do elemento como nulo como se a lista acabasse nele
+	movl ponteiro, %edi 				# move o endereço do ultimo abre parenteses para o %edi
+	movl 16(%edi), %edi 				# acessa o proximo elemto do ultimo abre parenteses
+	movl %edi, ponteiro 				# move o endereço do proximo elemento para o ponteiro para começar a resolvera  expressao nesse elemento
+	call reduz 							# chama a função reduz que irá resolver a sub-expressao a partir do endereço do ponteiro até um NULL
 	
-	movl ponteiro, %ebx		# endereço do resultado, anterior dele é o abre parenteses
+	movl ponteiro, %ebx					# endereço do resultado, anterior dele é o abre parenteses e seu proximo é NULL
 
-	movl aux, %eax  # endereço do proximo do )
-	cmpl NULL, %eax
+	movl aux, %eax  					# endereço do proximo do ) salvo anteriormente
+	cmpl NULL, %eax 					# se o proximo do ) for NULL não é necessário alterar o proximo do resultado pois ja é NULL
 	je retira_abre_parenteses
-
-	movl %eax, 16(%ebx)
-	movl %ebx, 12(%eax)
+										# caso não seja NULL é necessário fazer a linkagem para retirar o ) corretamente
+	movl %eax, 16(%ebx)					# move o endereço do proximo do ) para o proximo do resultado
+	movl %ebx, 12(%eax) 				# move o endereço do resultado para o anterior do proximo do )
+										# agora o ) não faz mais parte da lista
 
 retira_abre_parenteses:
 
-	movl 12(%ebx), %eax
-	cmpl NULL, %eax
-	je continua_procura_parenteses
-	movl 12(%eax), %eax
+	movl 12(%ebx), %eax 				# move o anterior do resultado que é o endereço do último ) para o %eax
+
+	movl 12(%eax), %eax 				# acessa o anterior do (
+	cmpl listatoken, %eax 				# compara 		
+	je altera_comeco_lista
+
 	movl %ebx, 16(%eax)
 	movl %eax, 12(%ebx)
+	jmp retorna_comeco
 
+altera_comeco_lista:
+	movl $0, 12(%ebx) 					# coloca NULL como proximo do resultado já que ele vai ser o novo começo da lista
+	movl %ebx, listatoken
+
+
+retorna_comeco:
 	movl listatoken, %edi
-	cmpl $5, (%edi)
-	je retira_elemento
-	jmp resolve_parenteses
-
-retira_elemento:
-	movl 16(%edi), %edi
-	movl %edi, listatoken
 	jmp resolve_parenteses
 
 continua_procura_parenteses:

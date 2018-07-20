@@ -34,13 +34,29 @@ void le_expressao(char expressao[], char fim_string[]){
 		);
 }
 
+void printa_expressao(double *resposta){
+	asm(
+		"movl 8(%esp), %ecx;"
+		"movl $4, %eax;"
+		"movl $1, %ebx;"
+		"movl $100, %edx;"
+		"int $0x80;"
+		);
+}
+
 
 int main(){
 	char expressao[200];
 	char fim_string[10] = "\0";
-	le_expressao(expressao, fim_string);
 	double resposta;
-	calcexpress(expressao, &resposta);
+	printf("Programa para interpretar expressões matemáticas aceitando parênteses\n");
+	printf("Operações suportadas: +,-,*,/\n");
+	printf("Funções suportadas: seno(x), cosseno(x), tangente(x), pow(x,y), raiz(x), log(x)\n");
+	printf("Digite a expressão: \n");
+
+	le_expressao(expressao, fim_string);		// chamada inline para ler a expressao
+	calcexpress(expressao, &resposta);			// chamada outline para resolver a expressao
 	printf ("Resposta = %.2lf\n", resposta);
+	//printa_expressao(&resposta);
 	return 0;
 }
