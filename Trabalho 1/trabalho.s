@@ -29,6 +29,7 @@ tlog:		.asciz  "log("
 
 valorD:		.int	0
 valorF:		.double	0.0
+menos_um: .double -1.0
 
 msgerro1:	.asciz	"\nSimbolo Indefinido! Pos = %d\n"
 msgerro2:	.asciz	"\nFalta Fecha Parentes! Pos = %d\n"
@@ -63,7 +64,55 @@ reduz:
 
 	movl listatoken, %edi
 
+	procura_numeros_negativos:
+
+
+	cmpl NULL, %edi
+	je comeca_reducao_vezes_divisao
+
+	cmpl $2, (%edi)
+	je achou_menos
+	jne continua_procura_menos
+
+achou_menos:
+	movl 16(%edi), %ebx		# endereço do proximo depois do -
+	cmpl $10, (%ebx)		# verifica se é um numero
+	je eh_numero
+	jne continua_procura_menos
+
+eh_numero:
+	movl 12(%edi), %eax
+	cmpl $10, (%eax)
+	je continua_procura_menos
+
+	fldl menos_um
+	fldl 4(%ebx)
+	fmulp %st(1), %st(0)
+	fstpl 4(%edi)
+	movl $10, (%edi)
+
+	movl 16(%ebx), %ecx
+	cmpl NULL, %ecx
+	je eh_nulo
+
+	movl 16(%ebx), %eax
+	movl %eax, 16(%edi)
+	movl %edi, 12(%eax)
+	jmp continua_procura_menos
+
+eh_nulo:
+	movl $0, 16(%edi)
+	jmp comeca_reducao_vezes_divisao
+
+continua_procura_menos:
+	movl 16(%edi), %edi
+	jmp procura_numeros_negativos
+
 	# Começa reduzindo * e /
+
+	comeca_reducao_vezes_divisao:
+	finit
+	movl listatoken, %edi
 
 reduz_lista:
 
@@ -1051,7 +1100,7 @@ main:
 	call	abertura
 	call	le_expressao
 	call	cria_lista
-	call	checa_lista
+	#call	checa_lista
 	#call	mostra_lista
 	call	reduz	
 
