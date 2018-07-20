@@ -13,7 +13,6 @@ trataerrolista:	.asciz	"\nErro na ordem da lista de tokkens.\n"
 titulomostra:	.asciz	"\nLista de Tokens:\n"
 
 mostraToken:	.asciz	"\nToken = %s\n"
-mostarD:	.asciz	"\nNumero = %d\n"
 mostraF:	.asciz	"\nFloat = %.2f\n"
 mostraC:	.asciz	"\nCaracter = %c\n"
 mostraS:	.asciz	"\nExpressao = %s\n"
@@ -42,7 +41,6 @@ formatoS:	.asciz	"%s"
 
 listatoken:	.int	0
 tipotoken:	.int	0
-flag:		.int	0
 
 contapar:	.int	0	# para ontar abre e fecha parenteses
 poscar:		.int	0	# anotar a posicao do caracter
@@ -62,12 +60,13 @@ contaponto:	.int	0
 reduz:
 	finit
 
+	# Começa resolvendo números negativos da forma -x
+
 	movl listatoken, %edi
 
 	procura_numeros_negativos:
 
-
-	cmpl NULL, %edi
+	cmpl NULL, %edi						# verifica se chegou no final da lista, caso sim, vai para a proxima etapa da redução
 	je comeca_reducao_vezes_divisao
 
 	cmpl $2, (%edi)
@@ -78,14 +77,14 @@ achou_menos:
 	movl 16(%edi), %ebx		# endereço do proximo depois do -
 	cmpl $10, (%ebx)		# verifica se é um numero
 	je eh_numero
-	jne continua_procura_menos
+	jne continua_procura_menos		# caso não seja, esse menos não pode ser reduzido
 
 eh_numero:
-	movl 12(%edi), %eax
-	cmpl $10, (%eax)
+	movl 12(%edi), %eax 			# anterior do -
+	cmpl $10, (%eax) 				# se for um numero não pode reduzir esse - pois ele é uma operação
 	je continua_procura_menos
 
-	fldl menos_um
+	fldl menos_um				# coloca -1 e o numero na pilha, realiza a multiplicação entre eles e coloca o resultado onde estava o - anteriormente
 	fldl 4(%ebx)
 	fmulp %st(1), %st(0)
 	fstpl 4(%edi)
@@ -100,11 +99,11 @@ eh_numero:
 	movl %edi, 12(%eax)
 	jmp continua_procura_menos
 
-eh_nulo:
+eh_nulo:						# é o ultimo elemento da lista então o seu proximo  agora é nulo e envia para a redução de divisão pois não existe mais - para reduzir
 	movl $0, 16(%edi)
 	jmp comeca_reducao_vezes_divisao
 
-continua_procura_menos:
+continua_procura_menos:				# continua procurando os menos
 	movl 16(%edi), %edi
 	jmp procura_numeros_negativos
 
@@ -120,7 +119,7 @@ reduz_lista:
 	je	comeca_reducao_mais_menos
 	
 	cmpl	$10, (%edi)
-	je	se_numero
+	je	contreduz
 
 	cmpl $1, (%edi)
 	je contreduz
@@ -158,8 +157,6 @@ continua:
 	movl $0, 16(%ebx)
 	movl %eax, %edi
 
-se_numero:
-
 contreduz:
 
 	movl	16(%edi), %edi
@@ -178,7 +175,7 @@ reduz_lista_mais_menos:
 	je	fimreduz
 	
 	cmpl	$10, (%edi)
-	je	se_numero_mais_menos
+	je	contreduz_mais_menos
 
 se_simbolo_mais_menos:
 	movl 12(%edi), %eax # anterior
@@ -208,8 +205,6 @@ continua_mais_menos:
 	movl %edi, 16(%eax)
 	movl $0, 16(%ebx)
 	movl %eax, %edi
-
-se_numero_mais_menos:
 
 contreduz_mais_menos:
 
@@ -265,7 +260,7 @@ mostra_lista:
 
 	movl	listatoken, %edi
 
-	voltamostra:
+voltamostra:
 	pushl	%edi
 
 	cmpl	NULL, %edi
@@ -274,7 +269,7 @@ mostra_lista:
 	cmpl	$10, (%edi)
 	je	mostranumero
 
-	mostrasimbolo:
+mostrasimbolo:
 
 	movl	4(%edi), %eax
 	pushl	%eax
@@ -283,7 +278,7 @@ mostra_lista:
 	addl	$8, %esp
 	jmp	contmostra
 
-	mostranumero:
+mostranumero:
 	
 	fldl	4(%edi)
 	subl	$8, %esp
@@ -292,13 +287,13 @@ mostra_lista:
 	call	printf
 	addl	$12, %esp
 
-	contmostra:
+contmostra:
 
 	popl	%edi
 	movl	16(%edi), %edi
 	jmp	voltamostra	
 
-	fimmostra:
+fimmostra:
 	popl	%edi
 	ret
 
@@ -309,7 +304,7 @@ cria_lista:
 	movl	$express, %edi
 	movl	$1, poscar
 
-	pegaprox:
+pegaprox:
 
 	movl	$0, %eax
 	movb	(%edi), %al
@@ -332,9 +327,6 @@ cria_lista:
 	cmpb	$47, %al
 	je	tratadivisao		# tipo 4
 
-	cmpb	$94, %al
-	je	tratapotencia		# tipo 11
-
 	cmpb	$40, %al
 	je	trataabreparentese	# tipo 5
 
@@ -350,7 +342,7 @@ cria_lista:
 	cmpb	$108, %al
 	je	tratalog		# tipo 10
 
-	cmpb 	$112, %al
+	cmpb 	$112, %al   # tipo 10
 	je tratapotencia
 
 	cmpb	$99, %al
@@ -367,7 +359,7 @@ cria_lista:
 
 	ret
 
-	tratafimstring:
+tratafimstring:
 
 	# tratar excesso de abre parenteses
 
@@ -377,17 +369,20 @@ cria_lista:
 
 	ret		# retorno do crialista
 				
-	errofim:
+errofim:
+
 	movl	$msgerro2, %ebx
 	jmp 	trataerro
 	
 
-	trataespaco:
+trataespaco:
+
 	incl	poscar
 	incl	%edi
 	jmp	pegaprox
 
-	tratapotencia:
+tratapotencia:
+
 	pusha
 
 	movl	$10, tipotoken
@@ -474,7 +469,7 @@ cria_lista:
 	jmp	pegaprox
 
 
-	trataraiz:
+trataraiz:
 
 	pusha
 
@@ -531,7 +526,7 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	tratalog:
+tratalog:
 
 	pusha
 
@@ -588,7 +583,8 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 	
-	tratasoma:
+tratasoma:
+
 	movl	$1, tipotoken
 	movl	$0, %ebx
 	movb	%al, %bl
@@ -598,7 +594,8 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	tratasubtracao:
+tratasubtracao:
+
 	movl	$2, tipotoken
 	movl	$0, %ebx
 	movb	%al, %bl
@@ -608,7 +605,8 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	tratamultiplicacao:
+tratamultiplicacao:
+
 	movl	$3, tipotoken
 	movl	$0, %ebx
 	movb	%al, %bl
@@ -618,7 +616,8 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	tratadivisao:
+tratadivisao:
+
 	movl	$4, tipotoken
 	movl	$0, %ebx
 	movb	%al, %bl
@@ -628,7 +627,8 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	trataabreparentese:
+trataabreparentese:
+
 	movl	$5, tipotoken
 	movl	$0, %ebx
 	movb	%al, %bl
@@ -639,7 +639,8 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	tratafechaparentese:
+tratafechaparentese:
+
 	movl	$6, tipotoken
 	movl	$0, %ebx
 	movb	%al, %bl
@@ -653,11 +654,13 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	erropar:
+erropar:
+
 	movl	$msgerro3, %ebx
 	jmp	trataerro
 
-	trataseno:
+trataseno:
+
 	pusha
 
 	pushl	$5			
@@ -678,11 +681,10 @@ cria_lista:
 	cmpl	$0, %eax
 	je	contseno1
 	
-	# tratar erro na funcao seno
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	contseno1:
+contseno1:
 
 	popa				
 
@@ -693,7 +695,6 @@ cria_lista:
 	cmpb	$48, %al
 	jge	contseno2
 
-	# tratar erro na funcao seno: argumento nao numerico
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
@@ -703,11 +704,10 @@ cria_lista:
 	cmpb	$57, %al
 	jle	contseno3
 	
-	# tratar erro na funcao seno: argumento nao numerico
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	contseno3:
+contseno3:
 
 	call	extraitokenN
 	
@@ -715,11 +715,10 @@ cria_lista:
 	cmpb	$41, %al
 	je	contseno4
 	
-	# tratar erro na funcao seno: argumento nao numerico
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	contseno4:
+contseno4:
 	
 	finit
 	
@@ -737,7 +736,7 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	tratacosseno:
+tratacosseno:
 	
 	pusha
 
@@ -759,12 +758,11 @@ cria_lista:
 	cmpl	$0, %eax
 	je	contcoseno1
 
-	# tratar erro na funcao cosseno
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
 
-	contcoseno1:
+contcoseno1:
 
 	popa				
 
@@ -775,12 +773,11 @@ cria_lista:
 	cmpb	$48, %al
 	jge	contcoseno2
 
-	# tratar erro na funcao cosseno: argumento nao numerico
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
 	
-	contcoseno2:		
+contcoseno2:		
 
 	cmpb	$57, %al
 	jle	contcoseno3
@@ -789,7 +786,7 @@ cria_lista:
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	contcoseno3:
+contcoseno3:
 
 	call	extraitokenN
 	
@@ -801,7 +798,7 @@ cria_lista:
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	contcoseno4:
+contcoseno4:
 	
 	finit
 	
@@ -819,7 +816,8 @@ cria_lista:
 	incl	%edi
 	jmp	pegaprox
 
-	tratatangente:
+tratatangente:
+
 	pusha
 
 	pushl	$9			
@@ -840,11 +838,10 @@ cria_lista:
 	cmpl	$0, %eax
 	je	conttangente1
 	
-	# tratar erro na funcao tangente
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	conttangente1:
+conttangente1:
 
 	popa				
 
@@ -855,21 +852,19 @@ cria_lista:
 	cmpb	$48, %al
 	jge	conttangente2
 
-	# tratar erro na funcao tangente: argumento nao numerico
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
 	
-	conttangente2:		
+conttangente2:		
 
 	cmpb	$57, %al
 	jle	conttangente3
 	
-	# tratar erro na funcao tangente: argumento nao numerico
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	conttangente3:
+conttangente3:
 
 	call	extraitokenN
 	
@@ -877,11 +872,10 @@ cria_lista:
 	cmpb	$41, %al
 	je	conttangente4
 	
-	# tratar erro na funcao tangente: argumento nao numerico
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
-	conttangente4:
+conttangente4:
 	
 	finit
 	
@@ -900,7 +894,7 @@ cria_lista:
 	jmp	pegaprox
 
 
-	tratanumero:
+tratanumero:
 
 	cmpb	$57, %al
 	jle	conttratanumero1
@@ -908,7 +902,7 @@ cria_lista:
 	movl	$msgerro1, %ebx
 	jmp	trataerro
 
-	conttratanumero1:
+conttratanumero1:
 
 	call	extraitokenN
 
@@ -924,25 +918,26 @@ cria_lista:
 	incl	poscar
 	jmp	pegaprox
 
-	trataerro:
+trataerro:
 	movl	poscar, %eax
 	pushl	%eax
 	pushl	%ebx
 	call	printf
 	addl	$8, %esp		#antes nada	
-	jmp	fim
+	pushl $0
+	call exit
 
-	erro4:
+erro4:
 
 	movl	$msgerro4, %ebx
 	jmp	trataerro
 
 
-	extraitokenN:
+extraitokenN:
 
 	movl	$token, %esi
 
-	voltatokenN:
+voltatokenN:
 
 	movb	(%edi),%cl
 	movb	%cl,(%esi) 
@@ -963,7 +958,7 @@ cria_lista:
 	movl	$0, contaponto
  	ret
 
-	contextrai1:
+contextrai1:
 
 	cmpl	$0, contaponto
 	je	contextrai2
@@ -971,12 +966,12 @@ cria_lista:
 	movl	$msgerro5, %ebx
 	jmp	trataerro
 	
-	contextrai2:
+contextrai2:
 
 	incl	contaponto
 	jmp	voltatokenN
 
-	contextrai3:
+contextrai3:
 	
 	cmpb	$57, %al
 	jle	voltatokenN
@@ -985,7 +980,8 @@ cria_lista:
 	jmp	trataerro
 	
 
-	inserelista:
+inserelista:
+
 	pushl	%edi
 
 	movl	listatoken, %edi
@@ -1001,7 +997,7 @@ cria_lista:
 	cmpl	NULL, %edi
 	je	insereinicio
 
-	inserefim:
+inserefim:
 	
 	movl	16(%edi), %esi
 	cmpl	NULL, %esi
@@ -1010,18 +1006,18 @@ cria_lista:
 	movl	%esi, %edi
 	jmp	inserefim
 
-	continserefim:
+continserefim:
 	
 	movl	%edi, 12(%eax)
 	movl	%eax, 16(%edi)
 	jmp	inseredefato
 
-	insereinicio:
+insereinicio:
 
 	movl	%eax, listatoken
 	movl	%eax, 12(%eax)
 
-	inseredefato:
+inseredefato:
 	
 	movl	tipotoken, %ecx
 	movl	%ecx,(%eax)
@@ -1029,16 +1025,16 @@ cria_lista:
 	cmpl	$10, %ecx
 	je	inserenumero
 
-	inseresimbolo:
+inseresimbolo:
 
 	movl	%ebx, 4(%eax)
 	jmp	continsere
 
-	inserenumero:
+inserenumero:
 
 	fstpl	4(%eax)
 
-	continsere:
+continsere:
 
 	movl	$0, 16(%eax)	# marquei proximo com NULL
 	
@@ -1050,47 +1046,124 @@ checa_lista:
 
 	movl	listatoken, %edi
 
-	voltacheca:
-	pushl	%edi
+	cmpl $1, (%edi)		# se a lista começar com +
+	je erro_lista
 
-	cmpl	NULL, %edi
-	je	fimcheca2
+	cmpl $3, (%edi)		# se a lista começar com *
+	je erro_lista
 
-	cmpl	$2, flag
-	je	fimcheca2
+	cmpl $4, (%edi)		# se a lista começar com /
+	je erro_lista
+
+	cmpl $2, (%edi)				# se começar com - necessariamente precisa de um número depois, não aceitando mais de 1 menos no começo
+	jne volta_checa_lista
+
+	movl 16(%edi), %eax
+	cmpl NULL, %eax
+	je erro_lista
+
+	cmpl $10, (%eax)
+	je continua_checa_lista
+	jne erro_lista
+
+volta_checa_lista:
 	
-	cmpl	$-1, flag
-	je	fimcheca2			 
+	cmpl NULL, %edi
+	je termina_checa_lista
 
-	cmpl	$10, (%edi)
-	je	checanumero
+	cmpl $5, (%edi)						# é um ( e o programa não aceita
+	je erro_lista
 
-	checasimbolo:
+	cmpl $6, (%edi)						# é um ) e o programa não aceita
+	je erro_lista
 
-	decl flag
-	jmp contcheca
+	cmpl $1, (%edi) 					# é um mais
+	je checa_mais_vezes_divisao
 
-	checanumero:
+	cmpl $2, (%edi)						# é um menos
+	je checa_menos
 
-	incl flag
-	jmp contcheca
+	cmpl $3, (%edi)						# é uma multiplicação
+	je checa_mais_vezes_divisao
 
-	contcheca:
+	cmpl $4, (%edi)						# é uma divisão
+	je checa_mais_vezes_divisao
 
-	popl	%edi
-	movl	16(%edi), %edi
-	jmp	voltacheca
+	cmpl $10, (%edi)					# é um numero
+	je checa_numero
 
-	fimcheca2:
-	cmpl	$1, flag
-	je	fimcheca
-	pushl	$trataerrolista
-	call	printf
-	addl	$4, %esp
-	jmp fim
+checa_menos:							# um menos só pode ter um outro menos (e somente 1) ou um número após
+	movl 16(%edi), %eax
 
-	fimcheca:	
-	popl	%edi
+	cmpl NULL, %eax
+	je erro_lista
+
+	cmpl $2, (%eax)
+	je achou_outro_menos
+	jne continua_checa_menos
+
+achou_outro_menos:						# se o proximo do menos for outro menos, necessariamente o proximo do segundo menos precisa ser um número
+	movl 16(%eax), %eax
+
+	cmpl NULL, %eax
+	je erro_lista
+
+	cmpl $10, (%eax)
+	je continua_checa_lista
+	jne erro_lista
+
+continua_checa_menos:
+	cmpl $10, (%eax)
+	jne erro_lista
+	je continua_checa_lista
+
+checa_mais_vezes_divisao:			# após um +,*,/ só pode ter um número ou um -
+	movl 16(%edi), %eax
+
+	cmpl NULL, %eax
+	je erro_lista
+
+	cmpl $2, (%eax)							 # checa se é um menos
+	je checa_menos_apos_divisao					
+	jne continua_checa_mais_vezes_divisao
+
+checa_menos_apos_divisao:			# se for um - o proximo necessariamente precisa ser um numero
+	movl 16(%eax), %eax
+
+	cmpl NULL, %eax
+	je erro_lista
+
+	cmpl $10, (%eax)
+	je continua_checa_lista
+	jne erro_lista
+
+continua_checa_mais_vezes_divisao:		# se não for um menos, só pode ser um número
+	cmpl $10, (%eax)
+	je continua_checa_lista
+
+	jmp erro_lista
+
+checa_numero:					# após um número só pode haver o fim da lista ou uma operação
+	movl 16(%edi), %eax
+
+	cmpl NULL, %eax
+	je termina_checa_lista
+
+	cmpl $10, (%eax)
+	je erro_lista
+
+continua_checa_lista:			# continua a verificação passando o proximo do %edi para o %edi e voltando ao checa_lista
+	movl 16(%edi), %edi
+	jmp volta_checa_lista
+
+
+erro_lista:						# printa erro na ordem dos tokens e termina o programa
+	pushl $trataerrolista
+	call printf
+	pushl $0
+	call exit
+
+termina_checa_lista:
 	ret
 
 .global main
@@ -1100,7 +1173,7 @@ main:
 	call	abertura
 	call	le_expressao
 	call	cria_lista
-	#call	checa_lista
+	call	checa_lista
 	#call	mostra_lista
 	call	reduz	
 
