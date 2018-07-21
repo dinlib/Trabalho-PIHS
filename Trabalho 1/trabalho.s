@@ -4,7 +4,7 @@ telaabertura:	.asciz	"Programa que interpreta e calcula expressoes matematicas\n
 
 mostraResultado: .asciz "\nResultado da expressão: %.2f\n"
 
-exemplo: .asciz "\nOperadores disponíveis: +,-,*,/ \nExemplos funções: seno(x), cosseno(x), tangente(x), raiz(x) \nNão suporta parenteses no momento"
+exemplo: .asciz "\nOperadores disponíveis: +,-,*,/ \nExemplos funções: seno(x), cosseno(x), tangente(x), raiz(x), pow(x,y), log(x) \nNão suporta parenteses"
 
 pedeexpressao:	.asciz	"\n\nEntre com a expressao matematica => ";
 
@@ -109,32 +109,38 @@ continua_procura_menos:				# continua procurando os menos
 
 	# Começa reduzindo * e /
 
+	# A ideia da redução é procurar sequencialmente os sinais de / e *, quando o %edi estiver em um dos dois sinais ele envia para a pilha FPU o anterior
+	# e o posterior do sinal que são os dois operandos, é feita a operação e o resultado é guardado no endereço do primeiro operando
+	# após guardar o resultado é preciso remover os dois proximo elementos do resultado que são respectivamente o sinal da operação (* ou /) 
+	# e o segundo operando, é feito isso através da manipulação dos proximos e anteriores dos elementos da lista
+
+
 	comeca_reducao_vezes_divisao:
 	finit
 	movl listatoken, %edi
 
 reduz_lista:
 
-	cmpl	NULL, %edi
+	cmpl	NULL, %edi 					# verifica se chegou no final da lista
 	je	comeca_reducao_mais_menos
 	
-	cmpl	$10, (%edi)
+	cmpl	$10, (%edi)                # veririca se é um número, caso sim, continuar verificação para o proximo elemento da lista
 	je	contreduz
 
-	cmpl $1, (%edi)
+	cmpl $1, (%edi)                   # se for um + tbm continua para o proximo
 	je contreduz
 
-	cmpl $2, (%edi)
+	cmpl $2, (%edi)                   # se for um - tbm continua para o proximo
 	je contreduz
 
 
-se_simbolo:
-	movl 12(%edi), %eax # anterior
-	fldl 4(%eax)
-	movl 16(%edi), %ebx	# proximo
+se_simbolo:                              # só chega aqui se for um * ou /
+	movl 12(%edi), %eax                 # anterior da operação (primeiro operando)
+	fldl 4(%eax)       
+	movl 16(%edi), %ebx	               # proximo da operação (segundo operando)
 	fldl 4(%ebx)
 
-	cmpl $4, (%edi)
+	cmpl $4, (%edi)                    # verifica se é uma multiplicação ou divisão
 	je faz_divisao
 
 faz_multiplicacao:
@@ -163,7 +169,10 @@ contreduz:
 	jmp	reduz_lista		
 
 
-############## 	REDUÇÃO MAIS E MENOS
+#	REDUÇÃO MAIS E MENOS
+
+# a redução de + e - segue o mesmo estilo da redução de * e /, a única diferença é que não precisa verificar se a operação é * ou / pois as mesmas já não existem
+
 
 comeca_reducao_mais_menos:
 
@@ -212,9 +221,9 @@ contreduz_mais_menos:
 	jmp	reduz_lista_mais_menos
 
 
-fimreduz:
+fimreduz:								# vai chegar aqui quando só houver 1 elemento na lista que é o resultado da operação
 
-	movl listatoken, %eax
+	movl listatoken, %eax              # o endereço do último elemento é o endereço da lista, é enviado para o eax para mostrar o resultado
 	fldl 4(%eax)
 	subl $8, %esp
 	fstpl (%esp)
