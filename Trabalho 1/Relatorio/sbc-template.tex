@@ -14,7 +14,7 @@
 
 \author{Guilherme Zamberlam Pomini  RA: 99345\inst{1} Diogo Fernando de Melo Sales RA: 93814 \inst{1}}
 
-\address{Professor: Ronaldo Augusto de Lara Gonçalves \\ Disciplina: Programação para Interfaceamento de Hardware e Software \\ Ciência da Computação \\Universidade Estadual de Maringá (UEM) \\ Sede Maringá -- Paraná -- Brasil \email{ra99345@uem.br, ra93814@uem.br}}
+\address{Professor: Ronaldo Augusto de Lara Gonçalves \\ Disciplina: Programação para Interfaceamento de Hardware e Software \\ Ciência da Computação \\Universidade Estadual de Maringá (UEM) \\ Sede Maringá -- Paraná -- Brasil\email{ra99345@uem.br, ra93814@uem.br}}
 
 \begin{document} 
 
@@ -87,8 +87,24 @@ Todas as operações requisitadas são resolvidas pelo programa então pode-se c
 Da mesma forma pode-se listar as limitações as expressões não aceitas pelo programa como:
 
 \begin{enumerate}
-\item Parênteses, embora o programa reconheça para criar a sua lista, uma expressão contendo parênteses não é resolvida e é tratada como erro na hora de checar a lista;
-\item Devido ao não suporte de parênteses, uma expressão da forma 2*(-3) é escrita da forma 2*-3, similarmente, a subtração de um número já negativo ficaria da forma 10--10 que seria equivalente a 10-(-10);
+\item Parênteses, embora o programa reconheça para criar a sua lista, uma expressão contendo parênteses não é resolvida e é tratada como erro na hora de checar a lista como mostra a Figura~\ref{fig:erro_parenteses};
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.5\textwidth]{Imagens/erro_parenteses.png}
+\caption{Erros Parenteses}
+\label{fig:erro_parenteses}
+\end{figure}
+
+\item Devido ao não suporte de parênteses, uma expressão da forma 2*(-3) é escrita da forma 2*-3, similarmente, a subtração de um número já negativo ficaria da forma 10--10 que seria equivalente a 10-(-10) como mostra a Figura~\ref{fig:menos};
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.5\textwidth]{Imagens/dois_menos.png}
+\caption{Tratamento para subtração de número negativo}
+\label{fig:menos}
+\end{figure}
+
 \item Ainda devido a questão deste trabalho não necessitar trabalhar com parênteses, a precedência das operações só depende da sua precedência natural (multiplicação e divisão antes de soma e subtração) e a ordem de aparência na expressão;
 \item A expressão deve possui um tamanho máximo de 200 caracteres.
 \end{enumerate}
@@ -97,7 +113,14 @@ Da mesma forma pode-se listar as limitações as expressões não aceitas pelo p
 
 O objetivo deste trabalho era implementar um interpretador de expressões matemáticas em linguagem Assembly 32 bits que trabalhasse tanto com  operações básicas quanto algumas mais complexas, sem o tratamento de parênteses.
 
-Através da criação da divisão de tarefas em procedimentos como de leitura da expressão, transformação da expressão para uma lista duplamente encadeada, checagem da lista e redução da lista para um resultado, foi possível atingir o objetivo esperado.
+Através da criação da divisão de tarefas em procedimentos como de leitura da expressão, transformação da expressão para uma lista duplamente encadeada, checagem da lista e redução da lista para um resultado, foi possível atingir o objetivo esperado como mostra a Figura~\ref{fig:resultado} que resolve a expressão ${3^{2} + \sqrt{25}/{5} * {\log_{10} 100} -10 }$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.5\textwidth]{Imagens/resultado.png}
+\caption{Resultado de uma expressão}
+\label{fig:resultado}
+\end{figure}
 
 \nocite{*}
 
