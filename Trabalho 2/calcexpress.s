@@ -67,14 +67,16 @@ endereco_retorno: .int 0
 .global resolve_parenteses
 
 calcexpress:
-	movl 4(%esp), %edi
+	movl 4(%esp), %edi				# pega o endereço da expressao passado 
 	movl %edi, endereco
-	movl 8(%esp), %edi
+
+	movl 8(%esp), %edi 				# pega o endereço do float em que o resultado será escrito
 	movl %edi, endereco_retorno
-	call cria_lista
-	#call checa_lista
-	movl listatoken, %edi
-	call resolve_parenteses
+
+	call cria_lista   				# cria a lista a partir da string endereço
+	movl listatoken, %edi           # move a lista criada para o %edi para poder iniciar a resolução da lista
+	call resolve_parenteses         # chama a resolução dos parenteses que é a função responsável por resolver a lista
+
 	ret
 
 resolve_parenteses:
@@ -119,7 +121,7 @@ retira_abre_parenteses:
 	movl 12(%ebx), %eax 				# move o anterior do resultado que é o endereço do último ) para o %eax
 
 	movl 12(%eax), %eax 				# acessa o anterior do (
-	cmpl listatoken, %eax 				# compara 		
+	cmpl listatoken, %eax 				# compara para saber se é o começo da lista, se for é necessário atualizar o endereço inicial da lista		
 	je altera_comeco_lista
 
 	movl %ebx, 16(%eax)
@@ -140,14 +142,18 @@ continua_procura_parenteses:
 	jmp resolve_parenteses
 
 
-termina_resolve_parenteses:
-	movl listatoken, %edi
-	movl %edi, ponteiro
-	call reduz
+termina_resolve_parenteses: 			# quando é chegado ao fim da lista quer dizer que não existem mais parenteses para resolver
+	movl listatoken, %edi				# é passado o endereço inicial da lista para o ponteiro 
+	movl %edi, ponteiro  				# esta chamada é necessária pq a expressão pode não ter nenhum parenteses, com a lista chegando inalterada até aqui
+	call reduz 							# é chamado a função reduz agora para a lista já resolvido os parenteses
 	ret
 
 
-# Função de redução das listas, primeiro resolve as potencias, em seguida * e /, por fim + e -
+# Função de redução das listas, primeiro resolve numeros negativos, em seguida * e /, por fim + e -
+# É a mesma função do trabalho 1 com a diferença que o começo dela indicada pela variavel ponteiro é passada pela função resolve_parenteses
+# ponteiro é um endereço da lista e a resolução vai até chegar em um NULL
+# assim sendo a função reduz funciona tanto para a lista inteira quanto para sub-expressões
+
 reduz:
 	finit
 
