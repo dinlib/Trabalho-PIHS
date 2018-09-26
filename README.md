@@ -17,7 +17,7 @@ Consiste na criação de um interpretador de expressões matemáticas utilizando
 * Funções Trigonométricas Seno, Cosseno e Tangente
 
 
-Descrição completa no seu [Relatorio](Trabalho%201/Relatorio/Relatorio.pdf).
+Descrição completa no seu [Relatorio](Trabalho%201/Relatorio/Relatorio%201.pdf).
 
 ## Trabalho 2
 
@@ -29,7 +29,7 @@ Descrição completa no seu [Relatorio](Trabalho%201/Relatorio/Relatorio.pdf).
 
 * A expressão aceita parênteses, tratando prioridades de sub-expressões
 
-Descrição completa no seu [Relatorio](Trabalho%202/Relatorio/Relatorio.pdf).
+Descrição completa no seu [Relatorio](Trabalho%202/Relatorio/Relatorio%202.pdf).
 
 
 ## Programas Utilizados
